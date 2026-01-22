@@ -45,11 +45,6 @@ def load_csv_to_sqlite(input_filename, db_name, table_name):
     reader = csv.reader(file)
     next(reader) # skip header
 
-    sql = f"""
-    INSERT INTO {table_name} ({col_names})
-    VALUES ({placeholders})
-    """
-
     cursor.executemany(
         f"""
         INSERT INTO {table_name} ({col_names})
@@ -57,6 +52,9 @@ def load_csv_to_sqlite(input_filename, db_name, table_name):
         """
         , reader
     )
+
+    conn.commit()
+    conn.close()
 
     return None
 
@@ -66,16 +64,50 @@ in that dataset
 '''
 def overview(db_name, table_name):
     conn = sqlite3.connect(db_name)
-    cur = conn.cursor()
+    cursor = conn.cursor()
 
-    cur.execute(f"ALTER TABLE {table_name} ADD COLUMN sum REAL;")
-    cur.execute("UPDATE original_table SET sum = num1 + num2 + num3;")
+    cursor.execute(f"DROP TABLE IF EXISTS intermediate")
+    cursor.execute(
+        f"""
+        CREATE TABLE intermediate AS
+        SELECT sample, b_cell, cd8_t_cell, cd4_t_cell, nk_cell, monocyte
+        FROM {table_name}
+        """
+    )
+
+    # add total_count column
+    cursor.execute("ALTER TABLE intermediate ADD COLUMN total_count INTEGER;")
+    cursor.execute(
+        f"""
+        UPDATE intermediate SET total_count = b_cell + cd8_t_cell + 
+        cd4_t_cell + nk_cell + monocyte;
+        """
+    )
+
+    # unpivot to separate by sample, population pair
+    cursor.execute(f"DROP TABLE IF EXISTS overview")
+    cursor.execute(
+        """
+        CREATE TABLE overview AS
+        SELECT sample, total_count, 'b_cell' AS population, b_cell, cd8_t_cell, cd4_t_cell, nk_cell, monocyte FROM intermediate
+        UNION ALL
+        SELECT sample, total_count, 'cd8_t_cell' AS population, b_cell, cd8_t_cell, cd4_t_cell, nk_cell, monocyte FROM intermediate
+        UNION ALL 
+        SELECT sample, total_count, 'cd4_t_cell' AS population, b_cell, cd8_t_cell, cd4_t_cell, nk_cell, monocyte FROM intermediate
+        UNION ALL 
+        SELECT sample, total_count, 'nk_cell' AS population, b_cell, cd8_t_cell, cd4_t_cell, nk_cell, monocyte FROM intermediate
+        UNION ALL 
+        SELECT sample, total_count, 'monocyte' AS population, b_cell, cd8_t_cell, cd4_t_cell, nk_cell, monocyte FROM intermediate
+        """
+    )
+    cursor.execute(f"DROP TABLE intermediate")
+
+    for row in cursor.execute(f"SELECT * FROM overview LIMIT 50 OFFSET 52450"):
+        print(row)
 
     conn.commit()
     conn.close()
     pass
-    #df['total_count'] = df[['b_cell','cd8_t_cell','cd4_t_cell','nk_cell','monocyte']].sum(axis=1)
-    #print(df.head)
 
 input_filename = "cell-count.csv"
 db_name = "teiko_technical.db"
