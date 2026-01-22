@@ -5,7 +5,7 @@ import csv
 '''
 Load CSV data from input file into a table in an SQlite database
 '''
-def load_csv_to_sqlite(input_filename, db_name="teiko_technical.db", table_name="sample_data"):
+def load_csv_to_sqlite(input_filename, db_name, table_name):
     file = open(input_filename, "r")
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
@@ -52,7 +52,7 @@ def load_csv_to_sqlite(input_filename, db_name="teiko_technical.db", table_name=
 
     cursor.executemany(
         f"""
-        INSERT INTO sample_data ({col_names})
+        INSERT INTO {table_name} ({col_names})
         VALUES ({placeholders})
         """
         , reader
@@ -61,14 +61,24 @@ def load_csv_to_sqlite(input_filename, db_name="teiko_technical.db", table_name=
     return None
 
 '''
-Given a SQlite db and table name, produce a summary table of the samples 
+Given an SQlite db and table name, produce a new summary table of the samples 
 in that dataset
 '''
-def overview(df):
+def overview(db_name, table_name):
+    conn = sqlite3.connect(db_name)
+    cur = conn.cursor()
+
+    cur.execute(f"ALTER TABLE {table_name} ADD COLUMN sum REAL;")
+    cur.execute("UPDATE original_table SET sum = num1 + num2 + num3;")
+
+    conn.commit()
+    conn.close()
     pass
     #df['total_count'] = df[['b_cell','cd8_t_cell','cd4_t_cell','nk_cell','monocyte']].sum(axis=1)
     #print(df.head)
 
-
-data = load_csv_to_sqlite("cell-count.csv")
-overview(data)
+input_filename = "cell-count.csv"
+db_name = "teiko_technical.db"
+table_name = "sample_data"
+data = load_csv_to_sqlite(input_filename, db_name, table_name)
+overview(db_name, table_name)
