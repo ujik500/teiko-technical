@@ -267,8 +267,76 @@ def analyze_frequencies_ttest(data_by_population: dict, cell_types: list) -> Non
         print(f"{cell_type:<18} {p_value:<12.4f} {threshold:<15.4f} {marker:<12}")
 
 # Part 4 ----------------------------------------------------------------------
-def further_analysis():
-    pass
+'''
+Given a table of sample data, filter the data and report statistics Bob is 
+looking for.
+'''
+def further_analysis(db_name: str, table_name: str) -> None:
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    
+    # Apply the base filter as a WHERE clause
+    base_where = "condition = 'melanoma' AND sample_type = 'PBMC' AND time_from_treatment_start = 0"
+    
+    cursor.execute(f"SELECT COUNT(*) FROM {table_name} WHERE {base_where}")
+    total_samples = cursor.fetchone()[0]
+    print(f"Total samples meeting criteria (PBMC, melanoma, baseline): {total_samples}\n")
+    
+    # 1. Count by project
+    print("1. Samples by Project:")
+    print("-" * 40)
+    cursor.execute(f"""
+        SELECT project, COUNT(*) as count
+        FROM {table_name}
+        WHERE {base_where}
+        GROUP BY project
+        ORDER BY count DESC
+    """)
+    for project, count in cursor.fetchall():
+        print(f"  {project}: {count}")
+    
+    # 2. Count by response
+    print("\n2. Samples by Treatment Response:")
+    print("-" * 40)
+    cursor.execute(f"""
+        SELECT response, COUNT(*) as count
+        FROM {table_name}
+        WHERE {base_where}
+        GROUP BY response
+    """)
+    for response, count in cursor.fetchall():
+        resp_label = "Responders" if response == 'yes' else "Non-responders"
+        print(f"  {resp_label}: {count}")
+    
+    # 3. Count by sex
+    print("\n3. Samples by Sex:")
+    print("-" * 40)
+    cursor.execute(f"""
+        SELECT sex, COUNT(*) as count
+        FROM {table_name}
+        WHERE {base_where}
+        GROUP BY sex
+    """)
+    for sex, count in cursor.fetchall():
+        sex_label = "Male" if sex == 'M' else "Female"
+        print(f"  {sex_label}: {count}")
+    
+    # 4. Cross-tabulation of response by sex
+    print("\n4. Response Status by Sex:")
+    print("-" * 40)
+    cursor.execute(f"""
+        SELECT sex, response, COUNT(*) as count
+        FROM {table_name}
+        WHERE {base_where}
+        GROUP BY sex, response
+        ORDER BY sex, response
+    """)
+    for sex, response, count in cursor.fetchall():
+        sex_label = "Male" if sex == 'M' else "Female"
+        resp_label = "Responders" if response == 'yes' else "Non-responders"
+        print(f"  {sex_label} - {resp_label}: {count}")
+    
+    conn.close()
 
 
 # Full Pipeline Execution -----------------------------------------------------
@@ -304,5 +372,6 @@ print(result)
 print("------------------------------------------------------------------------")
 
 print("PART 4: Data Subset Analysis")
+further_analysis(db_name, table_name)
 
     

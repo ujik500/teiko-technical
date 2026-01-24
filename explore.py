@@ -28,3 +28,11 @@ yes_avg = yes_total / yes_count
 no_avg = no_total / no_count
 print(f"Average b_cell percentage for responders (yes): {yes_avg:.4f}% over {yes_count} samples")
 print(f"Average b_cell percentage for non-responders (no): {no_avg:.4f}% over {no_count} samples")
+
+proj_dct = {}
+for i in range(len(data)):
+    project = data[i][0]
+    if data[i][2] == "melanoma" and data[i][8] == "PBMC" and data[i][9] == "0":
+        proj_dct[project] = proj_dct.get(project, 0) + 1
+print("\nSample counts by project:")
+print(proj_dct)
