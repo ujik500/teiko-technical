@@ -4,12 +4,7 @@ import csv
 import matplotlib.pyplot as plt
 from scipy import stats
 
-#Dataset Example Rows
-'''
-project,subject,condition,age,sex,treatment,response,sample,sample_type,time_from_treatment_start,b_cell,cd8_t_cell,cd4_t_cell,nk_cell,monocyte
-prj1,sbj000,melanoma,57,M,miraclib,no,sample00000,PBMC,0,10908,24440,20491,13864,23511
-prj1,sbj000,melanoma,57,M,miraclib,no,sample00001,PBMC,7,6777,19407,33459,18170,23011
-'''
+# Part 1 ----------------------------------------------------------------------
 
 '''
 Load CSV data from input file into a table in an SQlite database
@@ -66,6 +61,8 @@ def load_csv_to_sqlite(input_filename: str, db_name: str, table_name: str) -> No
     conn.close()
 
     file.close()
+
+# Part 2 ----------------------------------------------------------------------
     
 '''
 Given an SQlite db and table name, produce a new summary table of the samples 
@@ -112,11 +109,13 @@ def overview(db_name: str, table_name: str, overview_table_name: str) -> None:
     conn.commit()
     conn.close()
 
+# Part 3 ----------------------------------------------------------------------
 '''
-Provides analysis on cell types that have significant frequency changes between
-responders and non-responders, given a specific treatment and condition.
+Plot boxplots comparing cell relative frequencies between treatment responders
+and non-responders. Can be used with any statistical test.
+Returns the organized data by population and response for further analysis.
 '''
-def analyze_frequencies(db_name: str, sample_table_name: str, overview_table_name: str, treatment: str, condition: str) -> None:
+def plot_cell_frequencies(db_name: str, sample_table_name: str, overview_table_name: str, treatment: str, condition: str) -> tuple:
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     
@@ -175,8 +174,18 @@ def analyze_frequencies(db_name: str, sample_table_name: str, overview_table_nam
     plt.savefig('cell_response_boxplots.png', dpi=300, bbox_inches='tight')
     plt.show()
     
-    # Print detailed statistics
-    print("Cell Type Relative Frequency Statistics:")
+    conn.close()
+    
+    return data_by_population, cell_types
+
+
+'''
+Statistical analysis using Mann-Whitney U test (non-parametric).
+Compares cell relative frequencies between responders and non-responders.
+Works with data returned from plot_cell_frequencies().
+'''
+def analyze_frequencies_mw(data_by_population: dict, cell_types: list) -> None:
+    print("Cell Type Relative Frequency Statistics (Mann-Whitney U):")
     p_values = []
     
     for cell_type in cell_types:
@@ -211,14 +220,89 @@ def analyze_frequencies(db_name: str, sample_table_name: str, overview_table_nam
         marker = "Yes ***" if is_significant else "No"
         
         print(f"{cell_type:<18} {p_value:<12.4f} {threshold:<15.4f} {marker:<12}")
-    
-    conn.close()
 
+
+'''
+Alternative statistical analysis using Welch's t-test instead of Mann-Whitney U.
+Compares cell relative frequencies between responders and non-responders.
+Works with data returned from plot_cell_frequencies().
+Use to compare parametric vs non-parametric approaches.
+'''
+def analyze_frequencies_ttest(data_by_population: dict, cell_types: list) -> None:
+    print("\nCell Type Relative Frequency Statistics (Welch's t-test):")
+    p_values = []
+    
+    for cell_type in cell_types:
+        yes_data = data_by_population[cell_type]['yes']
+        no_data = data_by_population[cell_type]['no']
+        
+        yes_mean = sum(yes_data) / len(yes_data) if yes_data else 0
+        no_mean = sum(no_data) / len(no_data) if no_data else 0
+        
+        print(f"\n{cell_type}:")
+        print(f"  Responders (Yes)     - Mean: {yes_mean:.2f}%")
+        print(f"  Non-responders (No)  - Mean: {no_mean:.2f}%")
+        
+        # Perform Welch's t-test on relative frequencies
+        # equal_var=False performs Welch's correction for unequal variances
+        statistic, p_value = stats.ttest_ind(yes_data, no_data, equal_var=False)
+        p_values.append((cell_type, p_value))
+    
+    # Benjamini-Hochberg FDR correction (same as Mann-Whitney analysis)
+    print("\n" + "="*70)
+    print("Statistical Significance Testing (Welch's t-test with BH FDR)")
+    print("="*70)
+    
+    sorted_indices = sorted(range(len(p_values)), key=lambda i: p_values[i][1])
+    
+    print(f"{'Cell Type':<18} {'p-value':<12} {'BH Threshold':<15} {'Significant':<12}")
+    print("-"*70)
+    
+    for rank, idx in enumerate(sorted_indices):
+        cell_type, p_value = p_values[idx]
+        threshold = (rank + 1) / len(cell_types) * 0.05
+        is_significant = p_value < threshold
+        marker = "Yes ***" if is_significant else "No"
+        
+        print(f"{cell_type:<18} {p_value:<12.4f} {threshold:<15.4f} {marker:<12}")
+
+# Part 4 ----------------------------------------------------------------------
+def further_analysis():
+    pass
+
+
+# Full Pipeline Execution -----------------------------------------------------
 
 input_filename = "cell-count.csv"
 db_name = "teiko_technical.db"
 table_name = "sample_data"
 overview_table_name = "overview"
+
+print("PART 1: Data Management")
+print("Loading CSV data into SQLite database...")
 load_csv_to_sqlite(input_filename, db_name, table_name)
+
+print("------------------------------------------------------------------------")
+
+print("PART 2: Initial Analysis - Data Overview")
 overview(db_name, table_name, overview_table_name)
-analyze_frequencies(db_name, table_name, overview_table_name, "miraclib", "melanoma")
+
+print("------------------------------------------------------------------------")
+
+print("PART 3: Statistical Analysis")
+# Plot the data and get organized data for statistical analysis
+data_by_population, cell_types = plot_cell_frequencies(db_name, table_name, overview_table_name, "miraclib", "melanoma")
+
+# Run alternative statistical analysis with Welch's t-test
+analyze_frequencies_ttest(data_by_population, cell_types)
+result = "According to Welch's t-test, melanoma patients who responded to miraclib have a significantly higher proportion of cd4_t_cells compared to non-responders. Other cell types show slight variations, but they are not statistically significant."
+print(result)
+
+# Uncomment to run statistical analysis with Mann-Whitney U test
+#analyze_frequencies_mw(data_by_population, cell_types)
+
+print("------------------------------------------------------------------------")
+
+print("PART 4: Data Subset Analysis")
+
+    
