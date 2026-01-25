@@ -7,9 +7,9 @@ a file called **teiko_technical.db**.
 
 ## Part II: Running Unit Tests
 ### Option #1: Run all unit tests together
-python -m unittest test_teiko_technical.py -v
+```python -m unittest test_teiko_technical.py -v```
 ### Option #2: Run just one test class
-python -m unittest test_teiko_technical.TestOverview -v
+```python -m unittest test_teiko_technical.TestOverview -v```
 
 # Database Schema
 ## Overall Strategy
@@ -26,16 +26,16 @@ Holds all data fields from the original CSV file. This allows flexibility for al
 2. *overview*:
 Holds only the summary table that unpivots the five cell type count columns, and displays 
 
-If the team knew certain queries and comparisions were more common than others, this schema would be altered (drop certain columns, precalculate desired values) to speed future analysis. However, in this case, it is unclear what the priorities would be, so the generic *filter()* function can work as an all-around tool to grab desired data from the *sample_data* table and go from there.
+If the team knew certain queries and comparisions were more common than others, this schema would be altered (drop certain columns, precalculate desired values) to speed future analysis. However, in this case, it is unclear what the priorities would be, so the generic ```filter()``` function can work as an all-around tool to grab desired data from the *sample_data* table and go from there.
 
 # Code Structure
 * The code is divided into five main segments: the first four being functions necessary to complete the analysis for parts 1-4, and the fifth being the entire main pipeline execution. Outputs are visually separated by section for ease of viewing.
 
-* Each part is broken into one or more functions, that are tailored for the specific task, but with some flexibility to allow for reusability. For example, the table names and database file name are not hardcoded, and can be set to anything the programmer needs. In addition, *plot_cell_frequencies()* can analyze any condition-treatment pair, not just melanoma and miraclib. 
+* Each part is broken into one or more functions, that are tailored for the specific task, but with some flexibility to allow for reusability. For example, the table names and database file name are not hardcoded, and can be set to anything the programmer needs. In addition, ```plot_cell_frequencies()``` can analyze any condition-treatment pair, not just melanoma and miraclib. 
 
 * If a part requires more than one task to be completed, e.g. creating a plot AND doing a statistcal test, then those functions are separated for compartmentalization and reusability purposes. 
 
-* In part 3, I provided two different functions: one that analyzes cell relative frequencies based on Welch's t-test, and another that uses the Mann-Whitney U test, so there is also flexibility depending on which statistical test is preferred. My code uses Welch's t-test, but this can be switched by uncommenting line 415 instead of 410-412.
+* In part 3, I provided two different functions: one that analyzes cell relative frequencies based on **Welch's t-test**, and another that uses the **Mann-Whitney U test**, so there is also flexibility depending on which statistical test is preferred. My code uses Welch's t-test, but this can be switched by uncommenting line 415 instead of 410-412.
 
 # Dashboard Link
 [Streamlit Dashboard](https://teiko-technical.streamlit.app/)
