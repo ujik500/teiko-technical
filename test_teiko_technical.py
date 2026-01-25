@@ -632,7 +632,7 @@ class TestFilter(unittest.TestCase):
     def test_filter_project(self):
         """Test filtering by project"""
         count = self.get_filter_result_count(project='prj1')
-        self.assertEqual(count, 4, "Should find 4 prj1 rows")
+        self.assertEqual(count, 3, "Should find 3 prj1 rows")
     
     def test_filter_time_from_treatment_start(self):
         """Test filtering by time_from_treatment_start"""

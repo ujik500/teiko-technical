@@ -421,7 +421,7 @@ further_analysis(db_name, table_name)
 
 print("------------------------------------------------------------------------")
 
-print("Additional Question")
+print("Additional Query")
 filter(db_name, table_name, condition='melanoma', sex='M', time_from_treatment_start=0)
 # Calculate average b_cells for melanoma males at baseline
 conn = sqlite3.connect(db_name)
