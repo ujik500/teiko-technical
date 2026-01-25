@@ -1,6 +1,6 @@
 # Run Instructions
 ## Part I: Running the Main Code
-To run the main code and see all outputs required in parts 1-4, simply run the
+To run the main code and see all outputs required in Parts 1-4, simply run the
 file **teiko_technical.py**. Results for each part will be printed to the terminal,
 and the boxplot chart will be displayed on screen. The boxplot image will also be saved as **cell_response_boxplots.png**. SQLite data will be stored in 
 a file called **teiko_technical.db**.
@@ -35,7 +35,16 @@ If the team knew certain queries and comparisions were more common than others, 
 
 * If a part requires more than one task to be completed, e.g. creating a plot AND doing a statistcal test, then those functions are separated for compartmentalization and reusability purposes. 
 
-* In part 3, I provided two different functions: one that analyzes cell relative frequencies based on **Welch's t-test**, and another that uses the **Mann-Whitney U test**, so there is also flexibility depending on which statistical test is preferred. My code uses Welch's t-test, but this can be switched by uncommenting line 415 instead of 410-412.
+* In Part 3, I provided two different functions: one that analyzes cell relative frequencies based on **Welch's t-test**, and another that uses the **Mann-Whitney U test**, so there is also flexibility depending on which statistical test is preferred. My code uses Welch's t-test, but this can be switched by uncommenting line 415 instead of 410-412.
 
 # Dashboard Link
 [Streamlit Dashboard](https://teiko-technical.streamlit.app/)
+
+# File Overview
+* *cell-count.csv*: Original sample dataset.
+* *cell_response_boxplots.png*: Boxplots generated in Part 3, whch display relative frequencies of each cell type in melanoma patients who responded vs. did not respond to miraclib.
+* *dashboard.py*: Contains code to create the Streamlit dashboard for data exploration.
+* *requirements.txt*: Contains dependencies for the Streamlit dashboard to use.
+* *teiko_technical.db*: SQLite database is stored here.
+* ***teiko_technical.py***: Main code file, which displays all required results from Parts 1-4.
+* *test_teiko_technical.py*: Contains unit tests for functions in *teiko_technical.py*.
