@@ -339,6 +339,51 @@ def further_analysis(db_name: str, table_name: str) -> None:
     conn.close()
 
 
+def filter(db_name: str, table_name: str, **filters) -> None:
+    '''
+    Filter data from the table based on values for any of the first 10 features.
+    
+    Parameters:
+    - db_name: name of the SQLite database
+    - table_name: name of the table to filter
+    - **filters: keyword arguments for filtering (project, subject, condition, age, sex, 
+                 treatment, response, sample, sample_type, time_from_treatment_start)
+                 Only specified filters are applied.
+    
+    Example: filter(db_name, table_name, condition='melanoma', sex='M')
+    '''
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    
+    # Valid filter columns (first 10 features)
+    valid_columns = ['project', 'subject', 'condition', 'age', 'sex', 'treatment', 
+                     'response', 'sample', 'sample_type', 'time_from_treatment_start']
+    
+    # Build WHERE clause based on provided filters
+    where_conditions = []
+    params = []
+    
+    for column, value in filters.items():
+        if column not in valid_columns:
+            print(f"Warning: '{column}' is not a valid filter column. Skipping.")
+            continue
+        where_conditions.append(f"{column} = ?")
+        params.append(value)
+    
+    # Build the query
+    query = f"SELECT * FROM {table_name}"
+    if where_conditions:
+        query += " WHERE " + " AND ".join(where_conditions)
+    
+    # Execute the query
+    cursor.execute(query, params)
+    results = cursor.fetchall()
+    
+    # Print count
+    print(f"Found {len(results)} matching rows")
+    
+    conn.close()
+
 # Full Pipeline Execution -----------------------------------------------------
 
 input_filename = "cell-count.csv"
@@ -374,4 +419,17 @@ print("------------------------------------------------------------------------"
 print("PART 4: Data Subset Analysis")
 further_analysis(db_name, table_name)
 
-    
+print("------------------------------------------------------------------------")
+
+print("Additional Question")
+filter(db_name, table_name, condition='melanoma', sex='M', time_from_treatment_start=0)
+# Calculate average b_cells for melanoma males at baseline
+conn = sqlite3.connect(db_name)
+cursor = conn.cursor()
+cursor.execute(f"""
+    SELECT AVG(b_cell) FROM {table_name}
+    WHERE condition='melanoma' AND sex='M' AND time_from_treatment_start=0
+""")
+avg_b_cells = cursor.fetchone()[0]
+print(f"Average b_cells for melanoma males at baseline: {avg_b_cells:.2f}")
+conn.close()

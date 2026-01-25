@@ -36,3 +36,11 @@ for i in range(len(data)):
         proj_dct[project] = proj_dct.get(project, 0) + 1
 print("\nSample counts by project:")
 print(proj_dct)
+
+total = 0
+count = 0
+for i in range(len(data)):
+    if data[i][2] == "melanoma" and data[i][4] == "M" and data[i][9] == "0":
+        total += int(data[i][10])  
+        count += 1
+print(total / count)
